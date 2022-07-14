@@ -4,4 +4,4 @@ WORKDIR /app
 RUN pip install -r requirements.txt --no-deps
 COPY . /app
 ENTRYPOINT [ "python" ]
-CMD ["view.py" ]
+CMD ["api.py" ]

@@ -1,7 +1,12 @@
 services:
   web:
+    container_name: frontend
     build: ./web
     ports:
       - "3000:3000"
   mongo:
+    container_name: mongodb
     build: ./mongo
+  flask:
+    container_name: api
+    build: ./flask
