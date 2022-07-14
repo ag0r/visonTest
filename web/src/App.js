@@ -44,7 +44,7 @@ function App() {
         </div>
       </div>
       <div className="buttons" style={{ marginTop: image.height + 20 }}>
-        <label for="cassetteUpload" style={{ display: "block" }}>Upload File and Get Bounding Boxes</label>
+        <label htmlFor="cassetteUpload" style={{ display: "block" }}>Upload File and Get Bounding Boxes</label>
         <input type="file" name="cassette" id="cassetteUpload" onChange={getBoundingBoxes} style={{ marginTop: 20 }} />
       </div>
     </div>
