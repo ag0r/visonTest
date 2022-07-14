@@ -4,6 +4,7 @@ copy . /app/
 WORKDIR /app/web
 RUN npm install
 ENV NODE_OPTIONS "--openssl-legacy-provider"
+ENV HTTPS true
 #CMD ["node", "infrastructure-interview-takehome-main/web/public/index.html"]
 CMD ["npm", "start"]
 EXPOSE 3000
