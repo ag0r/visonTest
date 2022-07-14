@@ -1,10 +1,10 @@
 Requirements for running:
-- docker (compose is built in to docker, docker-compose not required)
 - git
 - virtualbox
 - vagrant
+- docker (compose is built in to docker, docker-compose not required) IF vagrant is not used
 
-Vagrant and virtualbox are technically not required, but make standardized development and testing environments much easier to manage. 
+Vagrant and virtualbox are technically not required, but make standardized development and testing environments much easier to manage and remove the requirement for docker to be installed locally.
 
 
 How to run:
