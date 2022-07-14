@@ -1,7 +1,7 @@
 services:
   web:
-    build: .
+    build: ./web
     ports:
       - "3000:3000"
   mongo:
-    image: "mongo:4-focal"
+    build: ./mongo
