@@ -1,9 +1,9 @@
 FROM node:18-alpine3.15
-copy . /app/
-WORKDIR /app/web
+COPY package.json .
 RUN npm install
 ENV NODE_OPTIONS "--openssl-legacy-provider"
-ENV HTTPS true
+COPY . /app/
+WORKDIR /app/web
 ENTRYPOINT [ "npm" ]
 CMD [ "start" ]
 EXPOSE 3000
