@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from werkzeug.datastructures import FileStorage
 import json
 import os
+from itertools import combinations
 from random import random, sample, seed
 from pprint import pprint
 
@@ -22,21 +23,26 @@ class BoundingBox:
         self.x_off: float = data["x_off"]
         self.y_off: float = data["y_off"]
 
-        self.errors = []
+        self.OSIA = False
 
-    def check_for_errors(self):
-        if (self.x_off < self.x1 or self.y_off < self.y1):
-            print(self.get_box(), flush=True)
-            self.errors.append("overlap")
-
-        if (self.x1 + self.x_off > 1 or self.y1 + self.y_off > 1 or self.x1 - self.x_off < 0 or self.y1 - self.y_off < 0):
-            self.errors.append("OutsideImageArea")
+    def check_for_OSIA(self):
+        if (self.x1 + self.x_off > 1 or self.y1 + self.y_off > 1):
+            self.OSIA = True
 
     def get_box(self):
         return {"x1": self.x1, "y1": self.y1, "x_off": self.x_off, "y_off": self.y_off}
 
     def get_errors(self):
         return self.errors
+
+    def intersects(self, other):
+        dx = min(self.x1 + self.x_off, other.x1 + other.x_off) - max(self.x1, other.x1)
+        dy = min(self.y1 + self.y_off, other.y1 + other.y_off) - max(self.y1, other.y1)
+
+        if (dx >= 0 and dy >= 0):
+            return True
+        else:
+            return False
 
 def generate_box_data(count = 1):
     boxes = []
@@ -49,7 +55,7 @@ def generate_box_data(count = 1):
 
     for d in data:
         box = BoundingBox(d)
-        box.check_for_errors()
+        box.check_for_OSIA()
         boxes.append(box)
     
     return boxes
@@ -58,33 +64,25 @@ def generate_box_data(count = 1):
 class parse_cv(Resource):
 
     def post(self):
-        print(request.files)
+        img = request.files
 
         boxes = generate_box_data(count = 3)
         r = {"boxes": [box.get_box() for box in boxes], "errors": []}
 
-        for error in ["OutsideImageArea", "overlap"]:
-            r["errors"].append({"type": error, "boxIndexes": [ind for ind, b in enumerate(boxes) if error in b.get_errors()]})
+        r["errors"].append({"type": "OutsideImageArea", "boxIndexes": [ind for ind, b in enumerate(boxes) if b.OSIA]})
+
+        overlapping_indexes = []
+        for box1, box2 in combinations(boxes, 2):
+            if box1.intersects(box2):
+                if (boxes.index(box1) not in overlapping_indexes):
+                    overlapping_indexes.append(boxes.index(box1))
+                if (boxes.index(box2) not in overlapping_indexes):
+                    overlapping_indexes.append(boxes.index(box2))
+
+        r["errors"].append({"type": "overlap", "boxIndexes": overlapping_indexes})
 
         pprint(r)
         print(flush=True)
-
-#        r = {
-#          "boxes": [
-#            {
-#              "x1": 0.30,
-#              "y1": 0.47,
-#              "x_off": 0.334,
-#              "y_off": 0.34
-#            }
-#          ],
-#          "errors": [
-#            {
-#              "type": "overlap",
-#              "boxIndexes": [0]
-#            }
-#          ]
-#        }
 
         return Response(json.dumps(r), status=200, mimetype="application/json")
 
