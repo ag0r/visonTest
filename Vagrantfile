@@ -6,6 +6,7 @@ Vagrant.configure("2") do |config|
   config.vagrant.plugins = "vagrant-docker-compose"
   config.vm.provision :docker
   config.vm.provision :docker_compose
+  config.vm.provision :shell, path: "./setup.sh"
 
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--ioapic", "on"]

@@ -27,17 +27,14 @@ class BoundingBox:
         self.x_off: float = data["x_off"]
         self.y_off: float = data["y_off"]
 
-        self.OSIA = False
-
     def check_for_OSIA(self):
-        if (self.x1 + self.x_off > 1 or self.y1 + self.y_off > 1):
-            self.OSIA = True
+        if (self.x1 + self.x_off > 1 or self.y1 + self.y_off > 1 or self.x1 < 0 or self.y1 < 0):
+            return True
+
+        return False
 
     def get_box(self):
         return {"x1": self.x1, "y1": self.y1, "x_off": self.x_off, "y_off": self.y_off}
-
-    def get_errors(self):
-        return self.errors
 
     def intersects(self, other):
         dx = min(self.x1 + self.x_off, other.x1 + other.x_off) - max(self.x1, other.x1)
@@ -48,12 +45,11 @@ class BoundingBox:
         else:
             return False
 
-def generate_box_data(count = 1):
+def generate_box_data(data_file, count = 3):
     boxes = []
     data = None
 
-    with open("sample-data.json", "r") as f:
-        data = json.load(f)
+    data = json.load(data_file)
 
     data = sample(data, count)
 
@@ -74,6 +70,17 @@ def store_data(image, data):
     cvs = db.cvs
     cv_id = cvs.insert_one(cv).inserted_id
 
+def check_intersections(boxes):
+    overlapping_indexes = []
+    for box1, box2 in combinations(boxes, 2):
+        if box1.intersects(box2):
+            if (boxes.index(box1) not in overlapping_indexes):
+                overlapping_indexes.append(boxes.index(box1))
+            if (boxes.index(box2) not in overlapping_indexes):
+                overlapping_indexes.append(boxes.index(box2))
+
+    return overlapping_indexes
+
 @api.route('/runcv', methods=['POST'])
 class parse_cv(Resource):
     def post(self):
@@ -81,20 +88,14 @@ class parse_cv(Resource):
         img_bytes = io.BytesIO()
         img.save(img_bytes, format='JPEG')
 
-        boxes = generate_box_data(count = 3)
+        with open("sample-data.json", "r") as f:
+            boxes = generate_box_data(data_file = f)
+
         r = {"boxes": [box.get_box() for box in boxes], "errors": []}
 
-        r["errors"].append({"type": "OutsideImageArea", "boxIndexes": [ind for ind, b in enumerate(boxes) if b.OSIA]})
+        r["errors"].append({"type": "OutsideImageArea", "boxIndexes": [ind for ind, b in enumerate(boxes) if b.check_for_OSIA()]})
 
-        overlapping_indexes = []
-        for box1, box2 in combinations(boxes, 2):
-            if box1.intersects(box2):
-                if (boxes.index(box1) not in overlapping_indexes):
-                    overlapping_indexes.append(boxes.index(box1))
-                if (boxes.index(box2) not in overlapping_indexes):
-                    overlapping_indexes.append(boxes.index(box2))
-
-        r["errors"].append({"type": "overlap", "boxIndexes": overlapping_indexes})
+        r["errors"].append({"type": "overlap", "boxIndexes": check_intersections(boxes)})
 
         store_data(img_bytes, r)
 
