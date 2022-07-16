@@ -3,16 +3,20 @@ from flask_restx import Api, Resource
 from flask import request, Response
 from pymongo import MongoClient
 from werkzeug.datastructures import FileStorage
-import json
-import os
 from itertools import combinations
 from random import random, sample, seed
+from datetime import datetime
+from PIL import Image
 from pprint import pprint
+import json
+import os
+import io
 
 app = Flask(__name__)
 api = Api(app)
 
-client = MongoClient()
+client = MongoClient('mongodb://mongo:27017')
+db = client.core
 
 seed(random())
 
@@ -60,11 +64,22 @@ def generate_box_data(count = 1):
     
     return boxes
 
+def store_data(image, data):
+    cv = {"image": image.getvalue()}
+
+    cv["bounding_boxes"] = data["boxes"]
+    cv["errors"] = data["errors"]
+    cv["timestamp"] = datetime.utcnow()
+
+    cvs = db.cvs
+    cv_id = cvs.insert_one(cv).inserted_id
+
 @api.route('/runcv', methods=['POST'])
 class parse_cv(Resource):
-
     def post(self):
-        img = request.files
+        img = Image.open(request.files.get('file'))
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='JPEG')
 
         boxes = generate_box_data(count = 3)
         r = {"boxes": [box.get_box() for box in boxes], "errors": []}
@@ -81,8 +96,7 @@ class parse_cv(Resource):
 
         r["errors"].append({"type": "overlap", "boxIndexes": overlapping_indexes})
 
-        pprint(r)
-        print(flush=True)
+        store_data(img_bytes, r)
 
         return Response(json.dumps(r), status=200, mimetype="application/json")
 
