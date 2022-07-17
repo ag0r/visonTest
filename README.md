@@ -1,7 +1,7 @@
 Requirements for running:
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [virtualbox](https://www.virtualbox.org/wiki/Downloads)
-- [vagrant](https://www.virtualbox.org/wiki/Downloads)
+- [vagrant](https://www.vagrantup.com/docs/installation)
 - [docker](https://docs.docker.com/get-docker/) (compose is built in to docker, docker-compose not required) IF vagrant is not used
 
 Vagrant and virtualbox are technically not required, but make standardized development and testing environments much easier to manage and remove the requirement for docker to be installed locally.
